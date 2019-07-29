@@ -1,0 +1,150 @@
+[
+    {
+        "Id": "e1",
+        "Expression": "m1 + m2 + m3",
+        "Label": "Expression1"
+    },
+    {
+        "Id": "e2",
+        "Expression": "m4 + m5 + m6",
+        "Label": "Expression2"
+    },
+    {
+        "Id": "m1",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "AWS/AmazonMQ",
+                "MetricName": "QueueSize",
+                "Dimensions": [
+                    {
+                        "Name": "Broker",
+                        "Value": "AMQ-Expo2020-Broker-Broker1-1"
+                    },
+                    {
+                        "Name": "Queue",
+                        "Value": "ex20.gigya.submitvisitorprofile.queue"
+                    }
+                ]
+            },
+            "Period": 300,
+            "Stat": "Sum",
+            "Unit": "Count"
+        },
+        "ReturnData": false
+    },
+    {
+        "Id": "m2",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "AWS/AmazonMQ",
+                "MetricName": "QueueSize",
+                "Dimensions": [
+                    {
+                        "Name": "Broker",
+                        "Value": "AMQ-Expo2020-Broker-Broker2-1"
+                    },
+                    {
+                        "Name": "Queue",
+                        "Value": "ex20.gigya.submitvisitorprofile.queue"
+                    }
+                ]
+            },
+            "Period": 300,
+            "Stat": "Sum",
+            "Unit": "Count"
+        },
+        "ReturnData": false
+    },
+    {
+        "Id": "m3",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "AWS/AmazonMQ",
+                "MetricName": "QueueSize",
+                "Dimensions": [
+                    {
+                        "Name": "Broker",
+                        "Value": "AMQ-Expo2020-Broker-Broker3-1"
+                    },
+                    {
+                        "Name": "Queue",
+                        "Value": "ex20.gigya.submitvisitorprofile.queue"
+                    }
+                ]
+            },
+            "Period": 300,
+            "Stat": "Sum",
+            "Unit": "Count"
+        },
+        "ReturnData": false
+    },
+    {
+        "Id": "m4",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "AWS/AmazonMQ",
+                "MetricName": "DequeueCount",
+                "Dimensions": [
+                    {
+                        "Name": "Broker",
+                        "Value": "AMQ-Expo2020-Broker-Broker1-1"
+                    },
+                    {
+                        "Name": "Queue",
+                        "Value": "ex20.gigya.submitvisitorprofile.queue"
+                    }
+                ]
+            },
+            "Period": 300,
+            "Stat": "Sum",
+            "Unit": "Count"
+        },
+        "ReturnData": false
+    },
+    {
+        "Id": "m5",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "AWS/AmazonMQ",
+                "MetricName": "DequeueCount",
+                "Dimensions": [
+                    {
+                        "Name": "Broker",
+                        "Value": "AMQ-Expo2020-Broker-Broker2-1"
+                    },
+                    {
+                        "Name": "Queue",
+                        "Value": "ex20.gigya.submitvisitorprofile.queue"
+                    }
+                ]
+            },
+            "Period": 300,
+            "Stat": "Sum",
+            "Unit": "Count"
+        },
+        "ReturnData": false
+    },
+    {
+        "Id": "m6",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "AWS/AmazonMQ",
+                "MetricName": "DequeueCount",
+                "Dimensions": [
+                    {
+                        "Name": "Broker",
+                        "Value": "AMQ-Expo2020-Broker-Broker3-1"
+                    },
+                    {
+                        "Name": "Queue",
+                        "Value": "ex20.gigya.submitvisitorprofile.queue"
+                    }
+                ]
+            },
+            "Period": 300,
+            "Stat": "Sum",
+            "Unit": "Count"
+        },
+        "ReturnData": false
+    }
+]
