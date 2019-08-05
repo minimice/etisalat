@@ -124,7 +124,7 @@ def main():
                 if (e1 > 0 and e2 == 0):
                     # Trigger SNS notification
                     response = sns.publish(
-                       TopicArn = 'arn:aws:sns:eu-west-1:895883787314:Test_DL',    
+                       TopicArn = 'arn:aws:sns:eu-west-1:895883787314:aws-alerts-test',    
                        Message = queueName + ' is not being processed',    
                     )
                     metricDataValue = 1.0
@@ -132,6 +132,11 @@ def main():
                 
                 # Put the metric data
                 putMetric(broker, queueName, metricDataValue)
+                
+    return {
+        'statusCode': 200,
+        'body': json.dumps('OK!')
+    }
 
 def putMetric(broker, queueName, metricDataValue):
     # Specify metric data
@@ -159,8 +164,6 @@ def putMetric(broker, queueName, metricDataValue):
             )
     
     print (response)
-
-    return
 
 if __name__== "__main__":
     main()
