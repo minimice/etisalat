@@ -11,6 +11,11 @@ from botocore.exceptions import ClientError
 # Green: Access to port 80, 25, 443, or 465 is unrestricted.
 # Red: Access to port 20, 21, 1433, 1434, 3306, 3389, 4333, 5432, or 5500 is unrestricted.
 # Yellow: Access to any other port is unrestricted.
+#
+# Lambda permissions required for the role
+# - AmazonEC2ReadOnlyAccess 
+# - AWSLambdaBasicExecutionRole
+#
 
 # Handling all red alerts only
 port_list = [
