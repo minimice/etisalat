@@ -96,28 +96,29 @@ def scan_groups(ec2, vpc_id):
                 for ip_range in ip_perm['Ipv6Ranges']:
                     ip_ranges.append(ip_range['CidrIpv6'])
 
+            # Check violations
             for cidr_ip in ip_ranges:
                 violations = []
 
-            if ip_protocol == 'all' and cidr_ip in cidr_list:
-                violations.append(ip_perm)
-            else:
-                for port in port_list:
-                    first, last = port.split('-', 1)
-                    
-                    if (str(from_port) == 'all'):
-                        from_port = 0
+                if ip_protocol == 'all' and cidr_ip in cidr_list:
+                    violations.append(ip_perm)
+                else:
+                    for port in port_list:
+                        first, last = port.split('-', 1)
 
-                    if (str(to_port) == 'all'):
-                        to_port = 65535
-                    
-                    if from_port <= int(last) <= to_port and ip_protocol.lower() == first and cidr_ip in cidr_list:
-                        violations.append(ip_perm)
+                        if (str(from_port) == 'all'):
+                            from_port = 0
 
-            if len(violations) > 0:
-                print('Violation: security group >>> {} ( {} )'.format(group_name, group_id))
-                print('proto: {}\t from port: {}\t to port: {}\t source: {}\n'.format(ip_protocol, from_port, to_port, cidr_ip))
-                # Trigger SNS here to alert users
+                        if (str(to_port) == 'all'):
+                            to_port = 65535
+
+                        if from_port <= int(last) <= to_port and ip_protocol.lower() == first and cidr_ip in cidr_list:
+                            violations.append(ip_perm)
+
+                if len(violations) > 0:
+                    print('Violation: security group >>> {} ( {} )'.format(group_name, group_id))
+                    print('proto: {}\t from port: {}\t to port: {}\t source: {}\n'.format(ip_protocol, from_port, to_port, cidr_ip))
+                    # Trigger SNS here to alert users
 
     return
 
