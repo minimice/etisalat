@@ -1,12 +1,15 @@
 #!/bin/bash
 
 # dev env
-input="./volumes-dev.csv"
-environment="dev"
+#input="./volumes-dev.csv"
+#environment="dev"
 
 # prod env
-#input="./volumes-existing.csv"
-#environment="prod"
+#### REMEMBER TO ALSO DOWNLOAD ./volumes-existing.csv
+#### OTHERWISE THE SCRIPT WON'T WORK
+#### Also you must run this script in Linux
+input="./volumes-existing.csv"
+environment="prod"
 
 while IFS= read -r line
 do
