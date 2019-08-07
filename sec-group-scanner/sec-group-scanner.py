@@ -40,6 +40,8 @@ def lambda_handler(event, context):
     vpc_ids = get_vpcs(ec2)
     for vpc_id in vpc_ids:
         result = scan_groups(ec2, vpc_id)
+        if result != None:
+            return result
  
     return {
         'statusCode': 200,
@@ -61,6 +63,7 @@ def scan_groups(ec2, vpc_id):
         groups = ec2.describe_security_groups(**args)['SecurityGroups']
     except ClientError as e:
         print(e.response['Error']['Message'])
+        # Returns a JSON object with the body as an error if an error occurs
         return {
             'statusCode': 200,
             'body': json.dumps(e.response['Error']['Message'])
@@ -73,6 +76,7 @@ def scan_groups(ec2, vpc_id):
         group_id   = group['GroupId']
         group_name = group['GroupName']
 
+        # Go through all IP permissions
         for ip_perm in group['IpPermissions']:
             ip_protocol = ip_perm['IpProtocol']
 
@@ -96,28 +100,29 @@ def scan_groups(ec2, vpc_id):
                 for ip_range in ip_perm['Ipv6Ranges']:
                     ip_ranges.append(ip_range['CidrIpv6'])
 
+            # Check violations in IP ranges
             for cidr_ip in ip_ranges:
                 violations = []
 
-            if ip_protocol == 'all' and cidr_ip in cidr_list:
-                violations.append(ip_perm)
-            else:
-                for port in port_list:
-                    first, last = port.split('-', 1)
-                    
-                    if (str(from_port) == 'all'):
-                        from_port = 0
+                if ip_protocol == 'all' and cidr_ip in cidr_list:
+                    violations.append(ip_perm)
+                else:
+                    for port in port_list:
+                        first, last = port.split('-', 1)
 
-                    if (str(to_port) == 'all'):
-                        to_port = 65535
-                    
-                    if from_port <= int(last) <= to_port and ip_protocol.lower() == first and cidr_ip in cidr_list:
-                        violations.append(ip_perm)
+                        if (str(from_port) == 'all'):
+                            from_port = 0
 
-            if len(violations) > 0:
-                print('Violation: security group >>> {} ( {} )'.format(group_name, group_id))
-                print('proto: {}\t from port: {}\t to port: {}\t source: {}\n'.format(ip_protocol, from_port, to_port, cidr_ip))
-                # Trigger SNS here to alert users
+                        if (str(to_port) == 'all'):
+                            to_port = 65535
+
+                        if from_port <= int(last) <= to_port and ip_protocol.lower() == first and cidr_ip in cidr_list:
+                            violations.append(ip_perm)
+
+                if len(violations) > 0:
+                    print('Violation: security group >>> {} ( {} )'.format(group_name, group_id))
+                    print('proto: {}\t from port: {}\t to port: {}\t source: {}\n'.format(ip_protocol, from_port, to_port, cidr_ip))
+                    # Trigger SNS to alert users
 
     return
 
@@ -129,6 +134,11 @@ def get_vpcs(ec2):
         vpcs = ec2.describe_vpcs()['Vpcs']
     except ClientError as e:
         print(e.response['Error']['Message'])
+         # Returns a JSON object with the body as an error if an error occurs
+        return {
+            'statusCode': 200,
+            'body': json.dumps(e.response['Error']['Message'])
+        }       
     else:
         for vpc in vpcs:
             vpc_ids.append(vpc['VpcId'])
