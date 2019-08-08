@@ -1,10 +1,24 @@
 #!/bin/bash
 
-tagName=Name1
-result=$(aws ec2 describe-instances --instance-ids i-0fde02c0593ff8038 --profile dev --filters "Name=tag-key,Values=${tagName}" --output text)
+tagName=Environment
 
-if [ -z "$result" ]; then
-  echo "Has no tag '${tagName}'"
-else
-  echo "Has tag '${tagName}'"
-fi
+ec2s=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].InstanceId' --profile dev --output text)
+
+for ec2 in $ec2s
+do
+  #echo "Checking "$ec2
+  # Remove carriage return and newline, happens in Windows, will not raise a ticket to fix this
+  ec2=$(echo ${ec2} | tr -d '\r')
+  # echo aws ec2 describe-instances --instance-ids $ec2 --profile dev --filters "Name=tag-key,Values=${tagName}" --output text
+  result=$(aws ec2 describe-instances --instance-ids $ec2 --profile dev --filters "Name=tag-key,Values=${tagName}" --output text)
+
+  if [ -z "$result" ]
+  then
+    echo $ec2 "has no tag '${tagName}' raise a ticket to tag it or get fired"
+  fi
+
+done
+
+
+
+
