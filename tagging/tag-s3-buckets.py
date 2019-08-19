@@ -2,10 +2,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 # Set your environment variables before running this script.  The following values are fake, use real values when running this
-# i.e.
-# set AWS_ACCESS_KEY_ID=AKIA6D4T4XZGSR7S1234
-# set AWS_SECRET_ACCESS_KEY=II9hASEn6jJENpdDErCI1C+9VX0EGKMXEkEx1234
-# set AWS_DEFAULT_REGION=eu-west-1
+# i.e. AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_DEFAULT_REGION
 
 key = 'SampleKey'
 value = 'SampleValue'
