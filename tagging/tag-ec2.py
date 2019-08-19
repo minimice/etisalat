@@ -9,10 +9,10 @@ def lambda_handler(event, context):
     # EC2 tag (Name) to search for, i.e. machines which you want to tag 
     # Use '*' to tag ALL EC2 instances
     # i.e. tagValue = '*'
-    matchingTagNameValue = 'Dev Portal Bastion'
+    matchingTagNameValue = '*'
     # The tag you want to add, e.g. Environment tag with value Development
-    newTagName = 'TestTagName'
-    newTagValue = 'TestTagValue'
+    newTagName = 'Environment'
+    newTagValue = 'Prod'
     
     client = boto3.client('ec2')
 
@@ -36,8 +36,11 @@ def search_and_tag(matchingTagNameValue, newTagName, newTagValue, client, nextTo
     
     for reservation in reservations['Reservations']:
         for instance in reservation['Instances']:
-            tag_ec2(client, instance, newTagName, newTagValue)
-            print(instance['InstanceId'] + " tagged with tagName '" + str(newTagName) + "' with value '" + str(newTagValue) + "'")
+            result = tag_ec2(client, instance, newTagName, newTagValue)
+            if (result):
+                print(instance['InstanceId'] + " tagged with tagName '" + str(newTagName) + "' with value '" + str(newTagValue) + "'")
+            else:
+                print(instance['InstanceId'] + " could not be tagged")
     
     return reservations
 
@@ -45,19 +48,24 @@ def search_and_tag(matchingTagNameValue, newTagName, newTagValue, client, nextTo
 def tag_ec2(client, instance, tagName, tagValue):
     tags = []
     # Try to get existing tags
-    try:
-        tags = instance['Tags']
-    except ClientError as e:
-        print("Caught unexpected error: %s" % e)
+    #try:
+    #    tags = instance['Tags']
+    #except ClientError as e:
+    #    print("Caught unexpected error: %s" % e)
     tags.append({'Key': tagName, 'Value': tagValue})
     instanceId = instance['InstanceId']
     # Tag the resource
-    response = client.create_tags(
-        Resources=[
-            '' + str(instanceId) +'',
-        ],
-        Tags=tags
-    )
+    try:
+        response = client.create_tags(
+            Resources=[
+                '' + str(instanceId) +'',
+            ],
+            Tags=tags
+        )
+    except ClientError as e:
+        print("Caught unexpected error: %s" % e)
+        return False
+    return True
 
 if __name__== "__main__":
     lambda_handler('dummy','dummy')
