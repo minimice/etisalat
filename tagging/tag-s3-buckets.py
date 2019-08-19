@@ -30,4 +30,4 @@ for bucket in buckets:
     tags.append({'Key': key, 'Value': value})
     # print(tags)
     # Tag bucket with newly appended tag
-    Set_Tag = bucket_tagging.put(Tagging={'TagSet':tags})
+    set_tag = bucket_tagging.put(Tagging={'TagSet':tags})
