@@ -11,7 +11,7 @@ do
   # Remove carriage return and newline, happens in Windows, will not raise a ticket to fix this
   ec2=$(echo ${ec2} | tr -d '\r')
   # echo aws ec2 describe-instances --instance-ids $ec2 --profile dev --filters "Name=tag-key,Values=${tagName}" --output text
-  result=$(aws ec2 describe-instances --instance-ids $ec2 --profile dev --filters "Name=tag-key,Values=${tagName}" --output text)
+  result=$(aws ec2 describe-instances --instance-ids $ec2 --profile ${profile} --filters "Name=tag-key,Values=${tagName}" --output text)
 
   if [ -z "$result" ]
   then
