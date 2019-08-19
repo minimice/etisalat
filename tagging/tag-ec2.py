@@ -3,6 +3,9 @@ import json
 from botocore.exceptions import ClientError
 
 def lambda_handler(event, context):
+    # If running from the command line, set your environment variables.
+    # i.e. AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_DEFAULT_REGION
+
     # EC2 tag (Name) to search for, i.e. machines which you want to tag 
     # Use '*' to tag ALL EC2 instances
     # i.e. tagValue = '*'
