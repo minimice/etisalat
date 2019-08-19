@@ -1,8 +1,9 @@
 #!/bin/bash
 
 tagName=Environment
+profile=dev
 
-ec2s=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].InstanceId' --profile dev --output text)
+ec2s=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].InstanceId' --profile ${profile} --output text)
 
 for ec2 in $ec2s
 do
