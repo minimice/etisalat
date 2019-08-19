@@ -9,10 +9,10 @@ def lambda_handler(event, context):
     # EC2 tag (Name) to search for, i.e. machines which you want to tag 
     # Use '*' to tag ALL EC2 instances
     # i.e. tagValue = '*'
-    matchingTagNameValue = '*'
+    matchingTagNameValue = 'Dev Portal Bastion'
     # The tag you want to add, e.g. Environment tag with value Development
-    newTagName = 'Environment'
-    newTagValue = 'Prod'
+    newTagName = 'NewTagName'
+    newTagValue = 'NewTagValue'
     
     client = boto3.client('ec2')
 
