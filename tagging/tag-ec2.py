@@ -37,7 +37,19 @@ def lambda_handler(event, context):
                # PROD
                {'account': 'Prod', 'client': prodClient, 'matchingTagName': '*', 'newTagName': 'Environment', 'newTagValue': 'Prod'},
                {'account': 'Prod', 'client': prodClient, 'matchingTagName': '*', 'newTagName': 'Region', 'newTagValue': 'eu-west-1'}]
+    
+    # Tag all EC2s (except OS tag)
+    tag_all_ec2s(clients)
 
+    # Tag OSes on all EC2s for all clients
+    tag_os_for_all_ec2s(devClient, testClient, prodClient)
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('OK!')
+    }
+
+def tag_all_ec2s(clients):
     for clientWithTags in clients:
 
         # Extract properties
@@ -54,10 +66,54 @@ def lambda_handler(event, context):
         while 'NextToken' in reservations:
             reservations = search_and_tag(matchingTagName, tagName, tagValue, client, account, reservations['NextToken'])
 
-    return {
-        'statusCode': 200,
-        'body': json.dumps('OK!')
-    }
+def tag_os_for_all_ec2s(devClient, testClient, prodClient):
+    clients = [# DEV
+               {'account': 'Dev',  'client': devClient,  'matchingTagName': '*'},
+               # TEST
+               {'account': 'Test', 'client': testClient, 'matchingTagName': '*'},
+               # PROD
+               {'account': 'Prod', 'client': prodClient, 'matchingTagName': '*'}]
+    
+    for envClient in clients:
+
+        # Extract properties
+        account = envClient['account']
+        client = envClient['client']
+        matchingTagName = envClient['matchingTagName']
+
+        # Initial request, search for all EC2s which match tag (Name)
+        reservations = search_and_tag_os(matchingTagName, client, account)
+        
+        # Paginate if there are additional results and tag
+        while 'NextToken' in reservations:
+           reservations = search_and_tag_os(matchingTagName, client, account, reservations['NextToken'])
+
+def search_and_tag_os(matchingTagNameValue, client, account, nextToken = ''):
+    if nextToken == '':
+        reservations = client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['' + matchingTagNameValue  +'']}])
+    else:
+        reservations = client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['' + matchingTagNameValue  +'']}], NextToken=nextToken)
+
+    newTagName = 'OS'
+    
+    for reservation in reservations['Reservations']:
+        for instance in reservation['Instances']:
+            newTagValue = get_ec2_platform(instance)
+            result = tag_ec2(client, instance, newTagName, newTagValue)
+            # print_output(result, instance, newTagName, newTagValue, account)
+            print_csv_output(result, instance, newTagName, newTagValue, account)
+    
+    return reservations
+
+def get_ec2_platform(instance):
+    # Tag OS, unfortunately it is not possible to determine OS info from the AWS API
+    # See https://forums.aws.amazon.com/thread.jspa?threadID=50257
+    # Instead, we use the platform field, if it is Windows we tag it as Windows, if there is nothing or does not exist, it will be tagged as Linux
+
+    os = 'linux'
+    if 'Platform' in instance:
+        os = instance['Platform']
+    return os
 
 def search_and_tag(matchingTagNameValue, newTagName, newTagValue, client, account, nextToken = ''):
     if nextToken == '':
@@ -68,7 +124,6 @@ def search_and_tag(matchingTagNameValue, newTagName, newTagValue, client, accoun
     for reservation in reservations['Reservations']:
         for instance in reservation['Instances']:
             result = tag_ec2(client, instance, newTagName, newTagValue)
-            # result = True
             # print_output(result, instance, newTagName, newTagValue, account)
             print_csv_output(result, instance, newTagName, newTagValue, account)
     
@@ -99,6 +154,10 @@ def get_ec2_name(instance):
 
 # Tags the EC2 instance
 def tag_ec2(client, instance, tagName, tagValue):
+
+    # Return straightaway (Do not tag, for testing only)
+    # return True
+
     tags = []
     # Try to get existing tags
     #try:
