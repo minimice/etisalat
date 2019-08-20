@@ -24,18 +24,19 @@ def lambda_handler(event, context):
     # e.g. newTagName = 'Environment' where 'Environment' is the tag you want to add or update
     #
     # Set newTagValue to the value of the tag
-    # e.g. newTagValue = 'Dev' where 'Environment' will have a value of 'Dev'    
+    # e.g. newTagValue = 'Dev' where 'Environment' will have a value of 'Dev'
 
     clients = [{'client': devClient,  'matchingTagName': '*', 'newTagName': 'Environment', 'newTagValue': 'Dev'},
                {'client': testClient, 'matchingTagName': '*', 'newTagName': 'Environment', 'newTagValue': 'Test'},
                {'client': prodClient, 'matchingTagName': '*', 'newTagName': 'Environment', 'newTagValue': 'Prod'}]
 
-    for clientAndTag in clients:
+    for clientWithTags in clients:
 
-        client = clientAndTag['client']
-        matchingTagName = clientAndTag['matchingTagName']
-        tagName = clientAndTag['newTagName']
-        tagValue = clientAndTag['newTagValue']
+        # Extract properties
+        client = clientWithTags['client']
+        matchingTagName = clientWithTags['matchingTagName']
+        tagName = clientWithTags['newTagName']
+        tagValue = clientWithTags['newTagValue']
 
         # Initial request, search for all EC2s which match tag (Name)
         reservations = search_and_tag(matchingTagName, tagName, tagValue, client)
