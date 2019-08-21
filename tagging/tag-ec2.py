@@ -44,10 +44,43 @@ def lambda_handler(event, context):
     # Tag OSes on all EC2s for all clients
     tag_os_for_all_ec2s(devClient, testClient, prodClient)
 
+    #### TESTS ####
+    # test_remove_tags_all_ec2s()
+
     return {
         'statusCode': 200,
         'body': json.dumps('OK!')
     }
+
+############ TESTS ###################
+# This tag will delete the tag name 'TestTagToDelete' on 'Dev Portal Bastion' in the dev account
+# If the tag doesn't exist, nothing will happen, if it already exists, it will be deleted
+def test_remove_tags_all_ec2s():
+
+    devSession = boto3.Session(profile_name='dev')
+    devClient = devSession.client('ec2')
+
+    clients = [# DEV
+              {'account': 'Dev',  'client': devClient,  'matchingTagName': 'Dev Portal Bastion', 'tagKeyToDelete': 'TestTagToDelete'}]
+
+    remove_tags_all_ec2s(clients)
+
+
+def remove_tags_all_ec2s(clients):
+    for clientWithTags in clients:
+
+        # Extract properties
+        account = clientWithTags['account']
+        client = clientWithTags['client']
+        matchingTagName = clientWithTags['matchingTagName']
+        tagName = clientWithTags['tagKeyToDelete']
+
+        # Initial request, search for all EC2s which match tag (Name)
+        reservations = search_and_remove_tag(matchingTagName, tagName, client, account)
+        
+        # Paginate if there are additional results and delete the tag
+        while 'NextToken' in reservations:
+            reservations = search_and_remove_tag(matchingTagName, tagName, client, account, reservations['NextToken'])
 
 def tag_all_ec2s(clients):
     for clientWithTags in clients:
@@ -95,7 +128,6 @@ def search_and_tag_os(matchingTagNameValue, client, account, nextToken = ''):
         reservations = client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['' + matchingTagNameValue  +'']}], NextToken=nextToken)
 
     newTagName = 'OS'
-    
     for reservation in reservations['Reservations']:
         for instance in reservation['Instances']:
             newTagValue = get_ec2_platform(instance)
@@ -114,6 +146,20 @@ def get_ec2_platform(instance):
     if 'Platform' in instance:
         os = instance['Platform']
     return os
+
+def search_and_remove_tag(matchingTagNameValue, tagToDelete, client, account, nextToken = ''):
+    if nextToken == '':
+        reservations = client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['' + matchingTagNameValue  +'']}])
+    else:
+        reservations = client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['' + matchingTagNameValue  +'']}], NextToken=nextToken)
+    
+    for reservation in reservations['Reservations']:
+        for instance in reservation['Instances']:
+            result = remove_tag_ec2(client, instance, tagToDelete)
+            # print_output(result, instance, newTagName, newTagValue, account)
+            # print_csv_output(result, instance, newTagName, '', account)
+    
+    return reservations
 
 def search_and_tag(matchingTagNameValue, newTagName, newTagValue, client, account, nextToken = ''):
     if nextToken == '':
@@ -151,6 +197,28 @@ def get_ec2_name(instance):
             return tag['Value']
     
     return "NO NAME"
+
+# Removes specific tags on EC2 instance
+def remove_tag_ec2(client, instance, tagName):
+    # Return straightaway (Do not tag, for testing only)
+    # return True
+
+    tags = []
+    tags.append({'Key': tagName})
+    instanceId = instance['InstanceId']
+
+    # Remove the tag on the resource
+    try:
+        response = client.delete_tags(
+          Resources=[
+               '' + str(instanceId) + '',
+           ],
+           Tags=tags
+        )
+    except ClientError as e:
+        print("Caught unexpected error: %s" % e)
+        return False
+    return True
 
 # Tags the EC2 instance
 def tag_ec2(client, instance, tagName, tagValue):
