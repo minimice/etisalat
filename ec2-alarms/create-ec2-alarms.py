@@ -10,38 +10,47 @@ prodSession = boto3.Session(profile_name='prod')
 
 def lambda_handler(event, context):
 
-    devClient = devSession.client('ec2')
+    devClientEc2 = devSession.client('ec2')
+    devClientAutoScaling = devSession.client('autoscaling')
+    devClientCloudwatch = devSession.client('cloudwatch')
     
     testClientEc2 = testSession.client('ec2')
     testClientAutoScaling = testSession.client('autoscaling')
     testClientCloudwatch = testSession.client('cloudwatch')
     
-    prodClient = prodSession.client('ec2')
+    prodClientEc2 = prodSession.client('ec2')
 
     # Create alarms for all EC2s
-    create_alarm_for_all_ec2s(devClient, testClientEc2, testClientAutoScaling, testClientCloudwatch, prodClient)
+    create_alarm_for_all_ec2s(devClientEc2, devClientAutoScaling, devClientCloudwatch,
+                              testClientEc2, testClientAutoScaling, testClientCloudwatch,
+                              prodClientEc2)
 
     return {
         'statusCode': 200,
         'body': json.dumps('OK!')
     }
 
-def create_alarm_for_all_ec2s(devClient, testClientEc2, testClientAutoScaling, testClientCloudwatch, prodClient):
+def create_alarm_for_all_ec2s(devClientEc2, devClientAutoScaling, devClientCloudwatch, testClientEc2, testClientAutoScaling, testClientCloudwatch, prodClientEc2):
     # clients = [# DEV
-    #            {'account': 'Dev',  'client': devClient,  'matchingTagName': '*'},
+    #            {'account': 'Dev',  'client': devClientEc2,  'matchingTagName': '*'},
     #            # TEST
     #            {'account': 'Test', 'client': testClientEc2, 'matchingTagName': '*'},
     #            # PROD
-    #            {'account': 'Prod', 'client': prodClient, 'matchingTagName': '*'}]
+    #            {'account': 'Prod', 'client': prodClientEc2, 'matchingTagName': '*'}]
 
-    clients = [{'account': 'Test',  'client': testClientEc2, 'cloudwatchClient': testClientCloudwatch, 'matchingTagName': 'Preprod Hybris ABAP2'}]
+    clients = [{'account': 'Test',  'client': testClientEc2, 'cloudwatchClient': testClientCloudwatch, 'autoscalingClient': testClientAutoScaling, 'matchingTagName': '*'}]
 
-    # Get all EC2 instances which are part of autoscaling
+    # Dev Performance Master
+    # clients = [{'account': 'Dev',  'client': devClientEc2, 'cloudwatchClient': devClientCloudwatch, 'autoscalingClient': devClientAutoScaling, 'matchingTagName': '*'}]
+
     asgEc2s = []
-    reservations = get_all_asg_ec2s(asgEc2s, testClientAutoScaling)
-    while 'NextToken' in reservations:
-        reservations = get_all_asg_ec2s(asgEc2s, testClientAutoScaling, reservations['NextToken'])
-    # print(asgEc2s)
+    for envClient in clients:
+        autoScalingClient = envClient['autoscalingClient']
+        # Get all EC2 instances which are part of autoscaling
+        reservations = get_all_asg_ec2s(asgEc2s, autoScalingClient)
+        while 'NextToken' in reservations:
+            reservations = get_all_asg_ec2s(asgEc2s, autoScalingClient, reservations['NextToken'])
+        # print(asgEc2s)
     
     for envClient in clients:
         # Extract properties
@@ -69,7 +78,7 @@ def get_all_asg_ec2s(asgEc2s, client, nextToken = ''):
     
     return reservations
 
-def get_asg_groupname(instanceId, session):
+def get_asg_groupname(instanceId, session, nextToken = ''):
 
     client = session.client('autoscaling')    
 
@@ -80,7 +89,7 @@ def get_asg_groupname(instanceId, session):
 
     for instance in reservations['AutoScalingInstances']:
         if (instanceId == instance['InstanceId']):
-            return instance["AutoScalingGroupName"]
+            return instance['AutoScalingGroupName']
     
     return False  
       
@@ -134,13 +143,11 @@ def create_alarm_ec2(cloudwatchclient, instance, account, individualInstance=Tru
     if (individualInstance):
         # Tag the resource
         try:
-            #print (instanceId + " " + get_ec2_name(instance) + " CREATE THE ALARM")
-
             instanceId = instance['InstanceId']
             threshold = 90
             alarmName = "CPU Utilization >%s%% for %s" % (str(threshold), instanceId)
             alarmDescription = "CPU Utilization of server %s is > %s%%" % (instanceId, str(threshold))
-            ## SNS ARN
+            ## SNS ARN (For test environment only, change this to your correct account SNS)
             snsAlertARN = "arn:aws:sns:eu-west-1:895883787314:aws-alerts-test"
 
             ## Create the alarm name and description
@@ -155,13 +162,12 @@ def create_alarm_ec2(cloudwatchclient, instance, account, individualInstance=Tru
                 Threshold = threshold,
                 Period = 300,
                 ComparisonOperator = 'GreaterThanOrEqualToThreshold',
-                Dimensions=[
+                Dimensions = [
                     {
                         'Name': 'InstanceId',
                         'Value': str(instanceId)
                     },
-                ],
-                Unit = 'None'
+                ]
             )
 
             print (response)
@@ -171,49 +177,49 @@ def create_alarm_ec2(cloudwatchclient, instance, account, individualInstance=Tru
     else:
         # Tag the AutoScaling Group resource
         try:
-            print ("TODO")
-            # instanceId = instance['InstanceId']
-            # session = None
-            # if (account == 'Test'):
-            #     session = testSession
-            # else if (account == 'Dev'):
-            #     session = devSession
-            # else if (account == 'Prod'):
-            #     session = prodSession
-            # else
-            #     print ("UNKNOWN ACCOUNT " + account)
-            #     return False
+            instanceId = instance['InstanceId']
+            session = None
+            if (account == 'Test'):
+                session = testSession
+            elif (account == 'Dev'):
+                session = devSession
+            elif (account == 'Prod'):
+                session = prodSession
+            else:
+                print ("UNKNOWN ACCOUNT " + account)
+                return False
             
-            # asgGroupName = get_asg_groupname(instanceId, session)
+            asgGroupName = get_asg_groupname(instanceId, session)
 
-            # threshold = 90
-            # alarmName = "CPU Utilization >%s%% for AutoScaling Group %s" % (asgGroupName, instanceId)
-            # alarmDescription = "CPU Utilization of server %s is > %s%%" % (instanceId, asgGroupName)
-            # ## SNS ARN
-            # snsAlertARN = "arn:aws:sns:eu-west-1:895883787314:aws-alerts-test"
+            #print (asgGroupName)
 
-            # ## Create the alarm name and description
-            # response = cloudwatchclient.put_metric_alarm(
-            #     AlarmName = alarmName,
-            #     AlarmDescription = alarmDescription,
-            #     AlarmActions = [snsAlertARN],
-            #     EvaluationPeriods = 1,
-            #     MetricName = 'CPUUtilization',
-            #     Namespace = 'AWS/EC2',
-            #     Statistic = 'Average',        
-            #     Threshold = threshold,
-            #     Period = 300,
-            #     ComparisonOperator = 'GreaterThanOrEqualToThreshold,
-            #     Dimensions=[
-            #         {
-            #             'Name': 'AutoScalingGroupName',
-            #             'Value': asgGroupName
-            #         },
-            #     ],
-            #     Unit = 'None'
-            # )
+            threshold = 90
+            alarmName = "CPU Utilization >%s%% for AutoScaling Group %s" % (threshold, asgGroupName)
+            alarmDescription = "CPU Utilization is > %s%% for AutoScaling Group %s" % (threshold, asgGroupName)
+            ## SNS ARN (For test environment only, change this to your correct account SNS)
+            snsAlertARN = "arn:aws:sns:eu-west-1:895883787314:aws-alerts-test"
 
-            # print (response)
+            ## Create the alarm name and description
+            response = cloudwatchclient.put_metric_alarm(
+                AlarmName = alarmName,
+                AlarmDescription = alarmDescription,
+                AlarmActions = [snsAlertARN],
+                EvaluationPeriods = 1,
+                MetricName = 'CPUUtilization',
+                Namespace = 'AWS/EC2',
+                Statistic = 'Average',        
+                Threshold = threshold,
+                Period = 300,
+                ComparisonOperator = 'GreaterThanOrEqualToThreshold',
+                Dimensions = [
+                    {
+                        'Name': 'AutoScalingGroupName',
+                        'Value': asgGroupName
+                    },
+                ]
+            )
+
+            print (response)
         except ClientError as e:
             print("Caught unexpected error: %s" % e)
             return False        
