@@ -19,29 +19,31 @@ def lambda_handler(event, context):
     testClientCloudwatch = testSession.client('cloudwatch')
     
     prodClientEc2 = prodSession.client('ec2')
+    prodClientAutoScaling = prodSession.client('autoscaling')
+    prodClientCloudwatch = prodSession.client('cloudwatch')    
 
     # Create alarms for all EC2s
     create_alarm_for_all_ec2s(devClientEc2, devClientAutoScaling, devClientCloudwatch,
                               testClientEc2, testClientAutoScaling, testClientCloudwatch,
-                              prodClientEc2)
+                              prodClientEc2, prodClientAutoScaling, prodClientCloudwatch)
 
     return {
         'statusCode': 200,
         'body': json.dumps('OK!')
     }
 
-def create_alarm_for_all_ec2s(devClientEc2, devClientAutoScaling, devClientCloudwatch, testClientEc2, testClientAutoScaling, testClientCloudwatch, prodClientEc2):
+def create_alarm_for_all_ec2s(devClientEc2, devClientAutoScaling, devClientCloudwatch, testClientEc2, testClientAutoScaling, testClientCloudwatch, prodClientEc2, prodClientAutoScaling, prodClientCloudwatch):
     # clients = [# DEV
-    #            {'account': 'Dev',  'client': devClientEc2,  'matchingTagName': '*'},
+    #            {'account': 'Dev',  'client': devClientEc2, 'cloudwatchClient': devClientCloudwatch, 'autoscalingClient': devClientAutoScaling, 'matchingTagName': '*'},
     #            # TEST
-    #            {'account': 'Test', 'client': testClientEc2, 'matchingTagName': '*'},
+    #            {'account': 'Test', 'client': testClientEc2, 'cloudwatchClient': testClientCloudwatch, 'autoscalingClient': testClientAutoScaling, 'matchingTagName': '*'},
     #            # PROD
-    #            {'account': 'Prod', 'client': prodClientEc2, 'matchingTagName': '*'}]
+    #            {'account': 'Prod', 'client': prodClientEc2, 'cloudwatchClient': prodClientCloudwatch, 'autoscalingClient': prodClientAutoScaling, 'matchingTagName': '*'}]
 
     clients = [{'account': 'Test',  'client': testClientEc2, 'cloudwatchClient': testClientCloudwatch, 'autoscalingClient': testClientAutoScaling, 'matchingTagName': '*'}]
 
     # Dev Performance Master
-    # clients = [{'account': 'Dev',  'client': devClientEc2, 'cloudwatchClient': devClientCloudwatch, 'autoscalingClient': devClientAutoScaling, 'matchingTagName': '*'}]
+    # clients = [{'account': 'Dev',  'client': devClientEc2, 'cloudwatchClient': devClientCloudwatch, 'autoscalingClient': devClientAutoScaling, 'matchingTagName': 'Dev Performance Master'}]
 
     asgEc2s = []
     for envClient in clients:
