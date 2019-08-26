@@ -44,11 +44,13 @@ def attach_iam_role_to_ec2s(devClient, testClient, prodClient):
         # Initial request, search for all EC2s
         reservations = search_and_attach_iam_role(matchingTagName, client, account)
         
-        # Paginate if there are additional results and tag
+        # Paginate if there are additional results and continue
         while 'NextToken' in reservations:
            reservations = search_and_attach_iam_role(matchingTagName, client, account, reservations['NextToken'])
 
 def search_and_attach_iam_role(matchingTagNameValue, client, account, nextToken = ''):
+    # matchingTagNameValue can be used for filtering, but we're not using it here
+    # reservations = client.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['' + matchingTagNameValue  +'']}])
     if nextToken == '':
         reservations = client.describe_instances()
     else:
@@ -69,9 +71,9 @@ def search_and_attach_iam_role(matchingTagNameValue, client, account, nextToken 
     return reservations
 
 def get_ec2_platform(instance):
-    # Tag OS, unfortunately it is not possible to determine OS info from the AWS API
+    # It is not possible to determine OS info from the AWS API
     # See https://forums.aws.amazon.com/thread.jspa?threadID=50257
-    # Instead, we use the platform field, if it is Windows we tag it as Windows, if there is nothing or does not exist, it will be tagged as Linux
+    # Instead, we use the platform field, if it is Windows we return it as Windows, if there is nothing or does not exist, it will be returned as Linux
 
     os = 'linux'
     if 'Platform' in instance:
@@ -81,7 +83,7 @@ def get_ec2_platform(instance):
 # Attach IAM role to the EC2 instance
 def attach_iam_role_to_ec2(client, instance, role_arn, account):
 
-    # Return straightaway (Do not tag, for testing only)
+    # Return straightaway (For testing only)
     # return True
 
     if (account == 'Test'):
