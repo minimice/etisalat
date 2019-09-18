@@ -1,6 +1,6 @@
 # etisalat
 
-Templates and scripts used at etisalat Public Cloud for Expo 2020.
+Templates and scripts used at etisalat Public Cloud for Expo 2020.  All code is open-source and free to use.
 
 ![Expo202](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHDAvQo6hlRnlnNjd3NtIg6Y5zFIGlfdcvadA60xHuMm9eXNE-)
 
